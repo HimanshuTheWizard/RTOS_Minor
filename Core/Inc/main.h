@@ -31,11 +31,40 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include <string.h>
 
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+typedef struct command_tag
+{
+	uint8_t value[10];
+	uint8_t len;
+}command_t;
+
+typedef enum
+{
+	main_menu,
+	led_effect,
+	rtc_menu,
+	rtc_time_config,
+	rtc_date_config,
+	rtc_report,
+}states;
+
+extern states e_state;
+extern TaskHandle_t Menu_Task_Handle;
+extern TaskHandle_t LED_Task_Handle;
+extern TaskHandle_t RTC_Task_Handle;
+extern TaskHandle_t Print_Task_Handle;
+extern TaskHandle_t Command_Task_Handle;
+extern QueueHandle_t input_data_queue;
+extern QueueHandle_t print_queue;
+extern UART_HandleTypeDef huart2;
 
 /* USER CODE END ET */
 
@@ -53,6 +82,13 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void Menu_Task_Handler(void *param);
+void LED_Task_Handler(void *param);
+void RTC_Task_Handler(void *param);
+void Print_Task_Handler(void *param);
+void Command_Task_Handler(void *param);
+void Process_User_Cmd(command_t *cmd_ptr);
+int Extract_Cmd(command_t *cmd_ptr);
 
 /* USER CODE END EFP */
 
