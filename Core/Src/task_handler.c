@@ -13,12 +13,12 @@ void Menu_Task_Handler(void *param)
 	uint32_t cmd_addr;
 	command_t *cmd;
 	uint8_t val;
-	const char *print_msg = "\n=======menu======\r\n"
+	const char *print_msg = "\r\n=======menu======\r\n"
 							"LED Effect         :0\r\n"
 							"Date and Time      :1\r\n"
 							"Exit               :2\r\n"
 							"Enter Your Choice  :";
-	const char *invalid_msg = "Invalid Input\n";
+	const char *invalid_msg = "Invalid Input\r\n";
 	while(1)
 	{
 		xQueueSend(print_queue, &print_msg, 0);
@@ -55,9 +55,62 @@ void Menu_Task_Handler(void *param)
 }
 void LED_Task_Handler(void *param)
 {
+	uint32_t cmd_ptr;
+	BaseType_t status;
+	command_t *cmd;
+	const char *invalid_msg = "Invalid Input\r\n";
+	const char *print_msg = "\r\n========menu========\r\n"
+								"none, e1, e2, e3\r\n"
+								"Enter Your Choice   :";
 	while(1)
 	{
-
+		status = xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+		if(status == pdTRUE)
+		{
+			xQueueSend(print_queue, &print_msg, 0);
+			status = xTaskNotifyWait(0, 0, &cmd_ptr, portMAX_DELAY);
+			cmd = (command_t *)cmd_ptr;
+			if(cmd->len <= 4)
+			{
+				if(!strcmp((char *)cmd->value, "none"))
+				{
+					HAL_GPIO_WritePin(GPIOD, RED_LED, GPIO_PIN_SET);
+					HAL_GPIO_WritePin(GPIOD, GREEN_LED, GPIO_PIN_SET);
+					HAL_GPIO_WritePin(GPIOD, BLUE_LED, GPIO_PIN_SET);
+				}
+				else if(!strcmp((char *)cmd->value, "e1"))
+				{
+					HAL_GPIO_WritePin(GPIOD, RED_LED, GPIO_PIN_SET);
+					HAL_GPIO_WritePin(GPIOD, GREEN_LED, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(GPIOD, BLUE_LED, GPIO_PIN_RESET);
+					//HAL_GPIO_WritePin(GPIOD, YELLOW_LED, GPIO_PIN_RESET);
+				}
+				else if(!strcmp((char *)cmd->value, "e2"))
+				{
+					HAL_GPIO_WritePin(GPIOD, RED_LED, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(GPIOD, GREEN_LED, GPIO_PIN_SET);
+					HAL_GPIO_WritePin(GPIOD, BLUE_LED, GPIO_PIN_RESET);
+					//HAL_GPIO_WritePin(GPIOD, YELLOW_LED, GPIO_PIN_RESET);
+				}
+				else if(!strcmp((char *)cmd->value, "e3"))
+				{
+					HAL_GPIO_WritePin(GPIOD, RED_LED, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(GPIOD, GREEN_LED, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(GPIOD, BLUE_LED, GPIO_PIN_SET);
+					//HAL_GPIO_WritePin(GPIOD, YELLOW_LED, GPIO_PIN_RESET);
+				}
+				else
+				{
+					xQueueSend(print_queue,(void *)&invalid_msg, 0);
+				}
+			}
+			else
+			{
+				xQueueSend(print_queue,(void *)&invalid_msg, 0);
+			}
+			e_state = main_menu;
+			xTaskNotify(Menu_Task_Handle, 0, eNoAction);
+		}
 	}
 }
 void RTC_Task_Handler(void *param)
